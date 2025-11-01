@@ -1,1 +1,1 @@
-customtkinter를 공부하다
+# customtkinter를 공부하다
