@@ -1,75 +1,67 @@
-#gpt로 짜봄 1
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog #영상 선택 가능하게
 import threading
 import cv2
-from PIL import Image, ImageTk # OpenCV 이미지를 CustomTkinter에 표시하기 위해 필요
+from PIL import Image, ImageTk
 
-# --- AI 모델 및 로직을 모의하는 클래스 (실제 모델로 대체 예정) ---
-class AISimulator:
+#AI 기능 부분 시작 (아직 안넣음) ===============================================================
+class ai_simulator:
     def __init__(self):
-        # 실제 AI 모델 로드 코드 (예: self.model = tf.keras.models.load_model('your_model.h5'))
         print("AI 모델 로드 준비 완료 (시뮬레이션 모드)")
 
     def check_danger(self, current_sec):
-        """
-        AI 모델 예측을 모의하는 함수. 
-        특정 시간대에 낙상이나 위험 상황이 감지된다고 가정합니다.
-        """
-        # 시연 영상의 5~7초와 15~16초 사이에 위험 감지 발생을 시뮬레이션
-        if (5 < current_sec < 7) or (15 < current_sec < 16):
+        if(5 < current_sec <7) or (15 < current_sec <16):
             return True
         return False
-# -------------------------------------------------------------------
 
 
+#GUI 부분 ===============================================================
 class MonitoringApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
-        
-        self.title("AI 기반 스마트 홈 안전 모니터링 시스템 (시연)")
-        self.geometry("900x700")
-        
-        self.ai_simulator = AISimulator()
+
+
+        self.title("여기에 프로젝트명을 입력")
+        self.geometry("900x700") #창 크기
+
+        self.ai_simulator = ai_simulator()
         self.video_running = False
 
-        # --- UI 컴포넌트 설정 ---
-        
-        # 1. 상태 및 제어 프레임
+        #1. 시스템의 상태를 표시하는 곳(뼈대)
         control_frame = ctk.CTkFrame(self)
-        control_frame.pack(pady=20, padx=20, fill="x")
+        control_frame.pack(pady=20, padx=20,fill="x") # fill="x"는?
 
-        # 2. 상태 라벨: "감지 중", "위험 감지됨"을 표시
+        #2. 시스템 상태 표시(출력)
         self.status_label = ctk.CTkLabel(
-            control_frame, 
-            text="시스템 준비 완료", 
-            font=ctk.CTkFont(size=24, weight="bold"),
+            control_frame,
+            text="홈카메라 준비 완료",
+            font = ctk.CTkFont(size=24, weight="bold"),
             text_color="gray"
         )
         self.status_label.pack(side="left", padx=20, pady=10)
-
-        # 3. 버튼: 시연 시작/종료
+        
+        #3. 작동 시작 버튼(영상 고르기) , start_demo_thread는 함수
         self.start_button = ctk.CTkButton(
-            control_frame, 
-            text="영상 파일로 시연 시작", 
+            control_frame,
+            text="작동 시작하기(영상을 고르기)",
             command=self.start_demo_thread,
             font=ctk.CTkFont(size=18)
         )
         self.start_button.pack(side="right", padx=20, pady=10)
 
-        # 4. 영상 표시 영역 (640x480 해상도에 맞춤)
-        self.video_label = ctk.CTkLabel(
-            self, 
+        #4. 영상 표시 영역
+        self.video_label=ctk.CTkLabel(
+            self,
             text="[AI 모니터링 영상 출력]", 
             width=640, 
             height=480, 
             fg_color=("gray80", "gray20")
         )
         self.video_label.pack(pady=10)
-        
-        # 5. 알림 로그 영역
+
+        #5. 하단에 알림 로그 영역
         log_frame = ctk.CTkFrame(self)
         log_frame.pack(pady=10, padx=20, fill="x")
         ctk.CTkLabel(log_frame, text="🚨 실시간 감지 로그", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(10, 5))
@@ -78,46 +70,44 @@ class MonitoringApp(ctk.CTk):
         self.log_textbox.insert("end", f"[{self.get_time()}] 시스템 부팅 완료.\n")
         self.log_textbox.configure(state="disabled") # 읽기 전용으로 설정
 
-    # --- 유틸리티 함수 ---
+
+    #기타 기능들
     def get_time(self):
-        """현재 시간을 'HH:MM:SS' 형식으로 반환"""
         import datetime
         return datetime.datetime.now().strftime("%H:%M:%S")
-
+    
     def update_status(self, text, color, button_state="normal"):
-        """메인 스레드에서 상태 라벨과 버튼 상태를 업데이트"""
-        self.status_label.configure(text=text, text_color=color)
+        self.status_label.configure( text = text, text_color=color )
         self.start_button.configure(state=button_state)
-        
+
+
+    #알림 로그 업데이트
     def add_log(self, message):
-        """로그 텍스트 박스에 메시지를 추가"""
         self.log_textbox.configure(state="normal")
         self.log_textbox.insert("end", f"[{self.get_time()}] {message}\n")
-        self.log_textbox.see("end") # 스크롤을 항상 맨 아래로
+        self.log_textbox.see("end") # 밑으로 자동 스크롤
         self.log_textbox.configure(state="disabled")
 
-    # --- 스레딩 및 AI 분석 로직 ---
     def start_demo_thread(self):
-        """AI 분석을 위한 백그라운드 스레드 시작"""
-        if self.video_running: return
+        if self.video_running: return #?
 
         video_path = filedialog.askopenfilename(
             title="시연 영상 파일 선택", 
             filetypes=(("MP4 files", "*.mp4"), ("All files", "*.*"))
         )
-        
-        if not video_path:
-            self.update_status("시스템 준비 완료", "gray")
-            return
 
-        self.update_status("감지 중...", "orange", button_state="disabled")
-        self.video_running = True
+        if not video_path:
+            self.update_status("홈카메라 준비 완료", "gray")
+            return
         
-        # 백그라운드 스레드에서 영상 분석 시작
+        self.update_status("작동 중...", "orange", button_state="disabled")
+        self.video_running = True
+
+        #스레드로 영상분석 ?
         thread = threading.Thread(target=self.run_ai_analysis, args=(video_path,))
         thread.daemon = True
         thread.start()
-
+    
     def run_ai_analysis(self, video_path):
         """보조 스레드에서 실행되는 영상 분석 및 UI 업데이트 로직"""
         cap = cv2.VideoCapture(video_path)
@@ -162,6 +152,9 @@ class MonitoringApp(ctk.CTk):
             self.after(0, lambda: self.update_status("시연 종료. 파일 선택 후 다시 시작 가능.", "green", button_state="normal"))
 
 
+
+
+        #opencv 프레임을 라벨에 표시(미완)
     def update_video_frame(self, frame):
         """OpenCV 프레임을 CTkLabel에 표시"""
         try:
@@ -177,15 +170,19 @@ class MonitoringApp(ctk.CTk):
             # 4. CustomTkinter 호환 이미지 생성
             img_tk = ctk.CTkImage(light_image=img, size=(640, 480))
 
-            # 5. 라벨에 이미지 설정
-            self.video_label.configure(image=img_tk)
+            # 5. 라벨에 이미지 설정 및 텍스트 제거
+            self.video_label.configure(image=img_tk, text="") 
             self.video_label.image = img_tk # 가비지 컬렉션 방지
             
         except Exception as e:
             print(f"영상 프레임 처리 오류: {e}")
             self.video_running = False
+            
+        
 
-# --- 앱 실행 ---
+#실행(계속 켜지게)
 if __name__ == "__main__":
     app = MonitoringApp()
     app.mainloop()
+
+
